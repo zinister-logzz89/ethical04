@@ -1,0 +1,17 @@
+{
+    "name": "security-logger/smtp-logger",
+    "description": "PHP SMTP Logger for security monitoring",
+    "type": "project",
+    "require": {
+        "php": ">=7.4",
+        "phpmailer/phpmailer": "^6.8"
+    },
+    "autoload": {
+        "psr-4": {
+            "SecurityLogger\\": "src/"
+        }
+    },
+    "config": {
+        "vendor-dir": "vendor"
+    }
+}

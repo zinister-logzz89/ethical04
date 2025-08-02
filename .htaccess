@@ -1,0 +1,79 @@
+# Security hardening for PHP SMTP Logger
+# Add additional security measures
+
+# Hide sensitive files
+<Files "config.php">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files "composer.json">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files "composer.lock">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Protect logs directory
+<DirectoryMatch "^/.*/logs/">
+    Order allow,deny
+    Deny from all
+</DirectoryMatch>
+
+# Protect vendor directory (if using Composer)
+<DirectoryMatch "^/.*/vendor/">
+    Order allow,deny
+    Deny from all
+</DirectoryMatch>
+
+# Prevent access to PHP files that should not be accessed directly
+<Files "smtp_logger.php">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Hide .git directory if present
+<DirectoryMatch "^/.*/\.git/">
+    Order allow,deny
+    Deny from all
+</DirectoryMatch>
+
+# Prevent access to common backup and temporary files
+<FilesMatch "\.(bak|backup|swp|tmp|temp)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Security headers
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options nosniff
+    Header always set X-Frame-Options DENY
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Disable server signature
+ServerSignature Off
+
+# Disable directory browsing
+Options -Indexes
+
+# PHP security settings
+<IfModule mod_php7.c>
+    php_flag display_errors Off
+    php_flag log_errors On
+    php_flag expose_php Off
+</IfModule>
+
+<IfModule mod_php8.c>
+    php_flag display_errors Off
+    php_flag log_errors On
+    php_flag expose_php Off
+</IfModule>
+
+# Error pages (optional)
+ErrorDocument 403 /index.html
+ErrorDocument 404 /index.html
