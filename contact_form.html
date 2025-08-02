@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Form - SMTP Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input[type="text"], 
+        input[type="email"], 
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 120px;
+            resize: vertical;
+        }
+        .btn {
+            background-color: #007cba;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #005a87;
+        }
+        .btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .message {
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 20px;
+            display: none;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .newsletter-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1>Contact Form Example</h1>
+        <p>This form demonstrates sending emails using PHP SMTP functionality.</p>
+        
+        <form id="contactForm">
+            <div class="form-group">
+                <label for="name">Your Name:</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Your Email:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="subject">Subject:</label>
+                <input type="text" id="subject" name="subject" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="message">Message:</label>
+                <textarea id="message" name="message" required></textarea>
+            </div>
+            
+            <button type="submit" class="btn" id="submitBtn">Send Message</button>
+        </form>
+        
+        <div id="responseMessage" class="message"></div>
+        
+        <div class="newsletter-section">
+            <h2>Newsletter Subscription</h2>
+            <form id="newsletterForm">
+                <div class="form-group">
+                    <label for="newsletter_name">Your Name:</label>
+                    <input type="text" id="newsletter_name" name="name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="newsletter_email">Your Email:</label>
+                    <input type="email" id="newsletter_email" name="email" required>
+                </div>
+                
+                <button type="submit" class="btn" id="newsletterBtn">Subscribe</button>
+            </form>
+            
+            <div id="newsletterMessage" class="message"></div>
+        </div>
+    </div>
+
+    <script>
+        // Contact Form Handler
+        document.getElementById('contactForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const responseMessage = document.getElementById('responseMessage');
+            
+            // Disable button and show loading state
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending...';
+            responseMessage.style.display = 'none';
+            
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('action', 'contact');
+            formData.append('name', document.getElementById('name').value);
+            formData.append('email', document.getElementById('email').value);
+            formData.append('subject', document.getElementById('subject').value);
+            formData.append('message', document.getElementById('message').value);
+            
+            try {
+                const response = await fetch('smtp_mailer.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    responseMessage.className = 'message success';
+                    responseMessage.textContent = result.message || 'Message sent successfully!';
+                    document.getElementById('contactForm').reset();
+                } else {
+                    responseMessage.className = 'message error';
+                    responseMessage.textContent = result.error || 'Failed to send message. Please try again.';
+                }
+                
+            } catch (error) {
+                responseMessage.className = 'message error';
+                responseMessage.textContent = 'An error occurred. Please try again later.';
+                console.error('Error:', error);
+            }
+            
+            // Show response message and reset button
+            responseMessage.style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Send Message';
+        });
+        
+        // Newsletter Form Handler
+        document.getElementById('newsletterForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('newsletterBtn');
+            const responseMessage = document.getElementById('newsletterMessage');
+            
+            // Disable button and show loading state
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Subscribing...';
+            responseMessage.style.display = 'none';
+            
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('action', 'newsletter');
+            formData.append('name', document.getElementById('newsletter_name').value);
+            formData.append('email', document.getElementById('newsletter_email').value);
+            
+            try {
+                const response = await fetch('smtp_mailer.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    responseMessage.className = 'message success';
+                    responseMessage.textContent = result.message || 'Welcome email sent!';
+                    document.getElementById('newsletterForm').reset();
+                } else {
+                    responseMessage.className = 'message error';
+                    responseMessage.textContent = result.error || 'Failed to subscribe. Please try again.';
+                }
+                
+            } catch (error) {
+                responseMessage.className = 'message error';
+                responseMessage.textContent = 'An error occurred. Please try again later.';
+                console.error('Error:', error);
+            }
+            
+            // Show response message and reset button
+            responseMessage.style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Subscribe';
+        });
+    </script>
+</body>
+</html>
