@@ -1,0 +1,16 @@
+{
+    "name": "contact-form",
+    "description": "A secure contact form using PHPMailer",
+    "type": "project",
+    "require": {
+        "phpmailer/phpmailer": "^6.8"
+    },
+    "autoload": {
+        "psr-4": {
+            "ContactForm\\": "src/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true
+    }
+}
